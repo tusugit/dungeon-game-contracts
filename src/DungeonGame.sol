@@ -52,12 +52,7 @@ contract DungeonGame {
     // ─────────────────────────────────────────
     event HeroMinted(address indexed player, uint256 tokenId);
     event BattleResult(
-        address indexed player,
-        uint256 heroId,
-        uint8 monsterId,
-        bool won,
-        uint256 goldEarned,
-        uint32 expEarned
+        address indexed player, uint256 heroId, uint8 monsterId, bool won, uint256 goldEarned, uint32 expEarned
     );
     event EquipmentBought(uint256 heroId, uint8 equipmentId);
 
@@ -90,10 +85,7 @@ contract DungeonGame {
     // ─────────────────────────────────────────
     //  铸造英雄
     // ─────────────────────────────────────────
-    function mintHero(
-        string calldata name,
-        uint8 heroClass
-    ) external payable returns (uint256) {
+    function mintHero(string calldata name, uint8 heroClass) external payable returns (uint256) {
         require(msg.value >= MINT_PRICE, "Insufficient ETH");
 
         uint256 tokenId = heroNFT.mintHero(msg.sender, name, heroClass);
@@ -108,30 +100,18 @@ contract DungeonGame {
         // ── Checks ──
         require(heroNFT.ownerOf(heroId) == msg.sender, "Not your hero");
         require(monsterId < monsters.length, "Invalid monster");
-        require(
-            block.timestamp >= lastBattleTime[heroId] + BATTLE_COOLDOWN,
-            "Hero is resting"
-        );
+        require(block.timestamp >= lastBattleTime[heroId] + BATTLE_COOLDOWN, "Hero is resting");
 
         // ── Effects（先更新状态，防重入）──
         lastBattleTime[heroId] = block.timestamp;
 
         Monster memory monster = monsters[monsterId];
         uint256 heroAttack = heroNFT.getTotalAttack(heroId);
-        (, , , , uint16 defense, uint16 hp, , ) = _getHeroStats(
-            heroId
-        );
+        (,,,, uint16 defense, uint16 hp,,) = _getHeroStats(heroId);
 
         // 战斗计算
         // 回合制简化：双方轮流攻击，计算谁先死
-        bool won = _calculateBattle(
-            heroAttack,
-            defense,
-            hp,
-            monster.attack,
-            monster.defense,
-            monster.hp
-        );
+        bool won = _calculateBattle(heroAttack, defense, hp, monster.attack, monster.defense, monster.hp);
 
         uint256 goldEarned = 0;
         uint32 expEarned = 0;
@@ -144,14 +124,7 @@ contract DungeonGame {
             expEarned = monster.expReward / 5;
         }
 
-        emit BattleResult(
-            msg.sender,
-            heroId,
-            monsterId,
-            won,
-            goldEarned,
-            expEarned
-        );
+        emit BattleResult(msg.sender, heroId, monsterId, won, goldEarned, expEarned);
 
         // ── Interactions（最后与外部合约交互）──
         if (expEarned > 0) {
@@ -207,9 +180,7 @@ contract DungeonGame {
     // ─────────────────────────────────────────
     //  查询：战斗冷却剩余时间
     // ─────────────────────────────────────────
-    function getCooldownRemaining(
-        uint256 heroId
-    ) external view returns (uint256) {
+    function getCooldownRemaining(uint256 heroId) external view returns (uint256) {
         uint256 readyAt = lastBattleTime[heroId] + BATTLE_COOLDOWN;
         if (block.timestamp >= readyAt) return 0;
         return readyAt - block.timestamp;
@@ -218,9 +189,7 @@ contract DungeonGame {
     // ─────────────────────────────────────────
     //  内部：解构英雄属性
     // ─────────────────────────────────────────
-    function _getHeroStats(
-        uint256 heroId
-    )
+    function _getHeroStats(uint256 heroId)
         internal
         view
         returns (
@@ -234,24 +203,15 @@ contract DungeonGame {
             uint16 eqBonus
         )
     {
-        HeroNFT.Hero memory h = heroNFT.getHero(heroId);  // 改这里
-        return (
-            h.name,
-            h.heroClass,
-            h.level,
-            h.attack,
-            h.defense,
-            h.hp,
-            h.exp,
-            heroNFT.equipmentBonus(heroId)
-        );
+        HeroNFT.Hero memory h = heroNFT.getHero(heroId); // 改这里
+        return (h.name, h.heroClass, h.level, h.attack, h.defense, h.hp, h.exp, heroNFT.equipmentBonus(heroId));
     }
 
     // ─────────────────────────────────────────
     //  提取 ETH（铸造费）
     // ─────────────────────────────────────────
     function withdraw() external onlyOwner {
-        (bool ok, ) = owner.call{value: address(this).balance}("");
+        (bool ok,) = owner.call{value: address(this).balance}("");
         require(ok, "Transfer failed");
     }
 }

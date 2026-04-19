@@ -14,7 +14,7 @@ contract Deploy is Script {
 
         // 1. 部署代币和NFT
         GoldToken gold = new GoldToken();
-        HeroNFT   nft  = new HeroNFT();
+        HeroNFT nft = new HeroNFT();
 
         // 2. 部署游戏主合约
         DungeonGame game = new DungeonGame(address(gold), address(nft));

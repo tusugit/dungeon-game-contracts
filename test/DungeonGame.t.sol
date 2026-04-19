@@ -73,7 +73,7 @@ contract DungeonGameTest is Test {
         uint256 tokenId = game.mintHero{value: 0.01 ether}("Arthur", 0);
 
         // 先刷够 GOLD
-        for (uint i = 0; i < 15; i++) {
+        for (uint256 i = 0; i < 15; i++) {
             vm.prank(alice);
             game.battle(tokenId, 0);
             vm.warp(block.timestamp + 1 hours);
